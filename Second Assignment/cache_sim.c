@@ -8,6 +8,12 @@ typedef enum { dm, fa } cache_map_t;
 typedef enum { uc, sc } cache_org_t;
 typedef enum { instruction, data } access_t;
 
+typedef struct node_t{
+  int index;
+  struct node_t* next;
+}node_t;
+
+
 typedef struct {
   uint32_t address;
   access_t accesstype;
@@ -19,11 +25,14 @@ typedef struct {
   // You can declare additional statistics if
   // you like, however you are now allowed to
   // remove the accesses or hits
+
 } cache_stat_t;
 
+// This struct is used for simulate the cache parts
 typedef struct {
-    int valid;
-    uint32_t tag;
+    int *valid; 
+    uint32_t *tag; 
+    int last_used; // for fully associative cache, if -1 it means is direct mapped
 } cache_entry_t;
 // DECLARE CACHES AND COUNTERS FOR THE STATS HERE
 
@@ -31,23 +40,8 @@ uint32_t cache_size;
 uint32_t block_size = 64;
 cache_map_t cache_mapping;
 cache_org_t cache_org;
-
 // USE THIS FOR YOUR CACHE STATISTICS
 cache_stat_t cache_statistics;
-void printBits(size_t const size, void const * const ptr)
-{
-    unsigned char *b = (unsigned char*) ptr;
-    unsigned char byte;
-    int i, j;
-    
-    for (i = size-1; i >= 0; i--) {
-        for (j = 7; j >= 0; j--) {
-            byte = (b[i] >> j) & 1;
-            printf("%u", byte);
-        }
-    }
-    puts("");
-}
 /* Reads a memory access from the trace file and returns
  * 1) access type (instruction or data access
  * 2) memory address
@@ -71,25 +65,65 @@ mem_access_t read_transaction(FILE* ptr_file) {
   access.address = 0;
   return access;
 }
-void directMappedMaskSetup(uint32_t* maskOffset, uint32_t* maskIndex, uint32_t* maskTag){
 
+//calculate the mask for the offset and tag
+void maskSetup(uint32_t* maskOffset, uint32_t* maskTag){
     *maskOffset = log2l(block_size);
-    *maskIndex = log2l(cache_size/block_size);
-    *maskTag = 32 - (*maskOffset + *maskIndex);
-
+    uint32_t temp = (cache_org == dm) ? log2l(cache_size/block_size) : 0; //it's temp because it's not used for the index calculation
+    *maskTag = 32 - temp - *maskOffset;
 }
+
+uint32_t getIndex(uint32_t address, uint32_t maskIndex){
+    return (address >> maskIndex) & (cache_size/block_size - 1);
+}
+
+uint32_t getTag(uint32_t address, uint32_t maskTag){
+    return (address >> (32 - maskTag));
+}
+
 int cache_access_dm(cache_entry_t *cache, mem_access_t access, uint32_t address_mask, uint32_t tag_mask){
-  uint32_t index = (access.address >> address_mask) & 0x3F;
-  uint32_t tag = (access.address  >> tag_mask) & 0xFFFF;
-  if (cache[index].valid == 1 && cache[index].tag == tag){
+  uint32_t index = getIndex(access.address, address_mask);
+  uint32_t tag = getTag(access.address, tag_mask);
+
+  if (cache->valid[index] == 1 && cache->tag[index] == tag){//hit
     return 1;
-  }
-  else{
-    cache[index].tag = tag;
-    cache[index].valid = 1;
+  }else{ //miss, so we update the cache
+    cache->tag[index] = tag;
+    cache->valid[index] = 1;
     return 0;
   }
+  return 0;
 }
+
+int cache_access_fa(cache_entry_t *cache,mem_access_t access_t, uint32_t address_mask, uint32_t tag_mask){
+  uint32_t tag = getTag(access_t.address, tag_mask);
+
+  for(int i = 0; i < cache_size/block_size; i++){
+    if(cache->valid[i] == 1 && cache->tag[i] == tag){//hit
+      return 1;
+    }
+  }//miss, so we update the cache
+  cache->valid[cache->last_used] = 1;
+  cache->tag[cache->last_used] = tag; 
+  cache->last_used = (cache->last_used + 1);
+  if(cache->last_used == cache_size/block_size){//go back to 0 if we reach the end of the cache
+    cache->last_used = 0;
+  }
+  printf("%d\n", cache->last_used);
+  return 0;
+}
+
+void initCache(cache_entry_t *cache, uint32_t num_blocks){
+  cache->valid = (int*)malloc(num_blocks*sizeof(int));
+  cache->tag = (uint32_t*)calloc(sizeof(uint32_t),num_blocks);
+
+  if(cache_mapping == fa){
+    cache->last_used = 0; //fully associative cache so we start at 0
+  }else{
+    cache->last_used = -1; // it's direct mapped so -1 means it's not used
+  }
+}
+
 void main(int argc, char** argv) {
   // Reset statistics:
   memset(&cache_statistics, 0, sizeof(cache_stat_t));
@@ -136,60 +170,56 @@ void main(int argc, char** argv) {
 
   /* Open the file mem_trace.txt to read memory accesses */
   FILE* ptr_file;
-  ptr_file = fopen("mem_trace.txt", "r");
+  ptr_file = fopen("m100hit.txt", "r");
   if (!ptr_file) {
     printf("Unable to open the trace file\n");
     exit(1);
   }
+  if(cache_org == sc) cache_size /= 2;
   uint32_t num_blocks = cache_size / block_size;
-  uint32_t split_num_blocks = (cache_size/2)/block_size;
-  cache_entry_t* cache = malloc(sizeof(cache_entry_t) * num_blocks);
 
-  cache_entry_t* cache_sc_data = malloc(sizeof(cache_entry_t) * split_num_blocks);
+  cache_entry_t cache;
+  cache_entry_t cache_sc_data;
+  cache_entry_t cache_sc_instruction;
 
-  cache_entry_t* cache_sc_instruction = malloc(sizeof(cache_entry_t) * split_num_blocks);
-
-  for(int i = 0; i < num_blocks; i++){
-      cache[i].valid = 0; //means invalid
-      cache[i].tag = 0;
+  if(cache_org == sc){
+    initCache(&cache_sc_data, num_blocks);
+    initCache(&cache_sc_instruction, num_blocks);
+  }else{  
+    initCache(&cache, num_blocks);
   }
-  uint32_t offsetMask, indexMask, tagMask;
-  directMappedMaskSetup(&offsetMask, &indexMask, &tagMask);
-  printf("offsetMask: %"PRIu32"\t", offsetMask);
-  printBits(sizeof(offsetMask), &offsetMask);
-  printf("\nindexMask:  %"PRIu32"\t", indexMask);
-  printBits(sizeof(indexMask), &indexMask );
-  printf("\ntagMask:  %"PRIu32"\t", tagMask);
-  printBits(sizeof(tagMask), &tagMask );
+  uint32_t offsetMask, tagMask;
 
+  maskSetup(&offsetMask, &tagMask);
+  printf("%d %d\n", offsetMask, tagMask);
   mem_access_t access;
   while (1) {
     access = read_transaction(ptr_file);
     // If no transactions left, break out of loop
     if (access.address == 0) break;
-    //printf("%d %x\n", access.accesstype, access.address);
+   // printf("%d %x\n", access.accesstype, access.address);
     /* Do a cache access */
     // ADD YOUR CODE HERE
     if(cache_mapping == dm){
       if(cache_org == sc){
-        if (access.accesstype == 'I'){  
-          if(cache_access_dm(cache_sc_instruction, access, offsetMask, tagMask) == 1){
-              cache_statistics.hits++;
-          }
+        if (access.accesstype == instruction){  
+            cache_statistics.hits += cache_access_dm(&cache_sc_instruction, access, offsetMask, tagMask);
         }else{
-            if(cache_access_dm(cache_sc_data, access, offsetMask, tagMask) == 1){
-              cache_statistics.hits++;
-            }
+              cache_statistics.hits += cache_access_dm(&cache_sc_data, access, offsetMask, tagMask);
         }
       }else{
-        if(cache_access_dm(cache, access, offsetMask, tagMask) == 1){
-          cache_statistics.hits++;
-        }
+          cache_statistics.hits+= cache_access_dm(&cache, access, offsetMask, tagMask);
       }
-    }
-    else{
-      printf("Fully associative not implemented\n");
-      exit(0);
+    }else{
+      if(cache_org == sc){
+        if (access.accesstype == instruction){
+            cache_statistics.hits+=cache_access_fa(&cache_sc_instruction, access, offsetMask, tagMask);
+        }else{
+              cache_statistics.hits+=cache_access_fa(&cache_sc_data, access, offsetMask, tagMask);
+        }        
+      }else{
+          cache_statistics.hits+=cache_access_fa(&cache, access, offsetMask, tagMask);
+      }
     }
     cache_statistics.accesses++;
   }
@@ -204,6 +234,16 @@ void main(int argc, char** argv) {
          (double)cache_statistics.hits / cache_statistics.accesses);
   // DO NOT CHANGE UNTIL HERE
   // You can extend the memory statistic printing if you like!
+  if(cache_org == sc){
+    free(cache_sc_data.valid);
+    free(cache_sc_data.tag);
+    free(cache_sc_instruction.valid);
+    free(cache_sc_instruction.tag);
+  }else{
+    free(cache.valid);
+    free(cache.tag);
+  }
+
 
   /* Close the trace file */
   fclose(ptr_file);

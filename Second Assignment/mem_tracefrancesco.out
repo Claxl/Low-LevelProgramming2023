@@ -1,0 +1,266 @@
+
+
+./cache_sim.exe 128 dm uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     941760
+Hit Rate: 0.6425
+
+
+
+./cache_sim.exe 128 dm sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1194914
+Hit Rate: 0.8152
+
+
+
+./cache_sim.exe 128 fa uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1115532
+Hit Rate: 0.7611
+
+
+
+./cache_sim.exe 128 fa sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1194914
+Hit Rate: 0.8152
+
+
+
+./cache_sim.exe 256 dm uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1090798
+Hit Rate: 0.7442
+
+
+
+./cache_sim.exe 256 dm sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1234174
+Hit Rate: 0.8420
+
+
+
+./cache_sim.exe 256 fa uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1230993
+Hit Rate: 0.8399
+
+
+
+./cache_sim.exe 256 fa sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1239016
+Hit Rate: 0.8453
+
+
+
+./cache_sim.exe 512 dm uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1186135
+Hit Rate: 0.8093
+
+
+
+./cache_sim.exe 512 dm sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1267978
+Hit Rate: 0.8651
+
+
+
+./cache_sim.exe 512 fa uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1279810
+Hit Rate: 0.8732
+
+
+
+./cache_sim.exe 512 fa sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1270254
+Hit Rate: 0.8666
+
+
+
+./cache_sim.exe 1024 dm uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1279732
+Hit Rate: 0.8731
+
+
+
+./cache_sim.exe 1024 dm sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1304930
+Hit Rate: 0.8903
+
+
+
+./cache_sim.exe 1024 fa uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1307053
+Hit Rate: 0.8918
+
+
+
+./cache_sim.exe 1024 fa sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1312611
+Hit Rate: 0.8955
+
+
+
+./cache_sim.exe 2048 dm uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1304920
+Hit Rate: 0.8903
+
+
+
+./cache_sim.exe 2048 dm sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1334338
+Hit Rate: 0.9104
+
+
+
+./cache_sim.exe 2048 fa uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1344612
+Hit Rate: 0.9174
+
+
+
+./cache_sim.exe 2048 fa sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1343642
+Hit Rate: 0.9167
+
+
+
+./cache_sim.exe 4096 dm uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1361370
+Hit Rate: 0.9288
+
+
+
+./cache_sim.exe 4096 dm sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1368234
+Hit Rate: 0.9335
+
+
+
+./cache_sim.exe 4096 fa uc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1364393
+Hit Rate: 0.9309
+
+
+
+./cache_sim.exe 4096 fa sc
+
+Cache Statistics
+-----------------
+
+Accesses: 1465707
+Hits:     1364464
+Hit Rate: 0.9309
+
+
+
