@@ -8,11 +8,6 @@ typedef enum { dm, fa } cache_map_t;
 typedef enum { uc, sc } cache_org_t;
 typedef enum { instruction, data } access_t;
 
-typedef struct node_t{
-  int index;
-  struct node_t* next;
-}node_t;
-
 
 typedef struct {
   uint32_t address;
@@ -27,6 +22,7 @@ typedef struct {
   // remove the accesses or hits
 
 } cache_stat_t;
+
 
 // This struct is used for simulate the cache parts
 typedef struct {
@@ -73,10 +69,12 @@ void maskSetup(uint32_t* maskOffset, uint32_t* maskTag){
     *maskTag = 32 - temp - *maskOffset;
 }
 
+//calculate the index by the mask
 uint32_t getIndex(uint32_t address, uint32_t maskIndex){
     return (address >> maskIndex) & (cache_size/block_size - 1);
 }
 
+//calculate the tag by the mask
 uint32_t getTag(uint32_t address, uint32_t maskTag){
     return (address >> (32 - maskTag));
 }
@@ -98,7 +96,7 @@ int cache_access_dm(cache_entry_t *cache, mem_access_t access, uint32_t address_
 int cache_access_fa(cache_entry_t *cache,mem_access_t access_t, uint32_t address_mask, uint32_t tag_mask){
   uint32_t tag = getTag(access_t.address, tag_mask);
 
-  for(int i = 0; i < cache_size/block_size; i++){
+  for(int i = 0; i < cache_size/block_size; i++){//we have to check all the cache block
     if(cache->valid[i] == 1 && cache->tag[i] == tag){//hit
       return 1;
     }
@@ -170,25 +168,29 @@ void main(int argc, char** argv) {
 
   /* Open the file mem_trace.txt to read memory accesses */
   FILE* ptr_file;
-  ptr_file = fopen("m100hit.txt", "r");
+  ptr_file = fopen("mem_trace.txt", "r");
+
   if (!ptr_file) {
     printf("Unable to open the trace file\n");
     exit(1);
   }
-  if(cache_org == sc) cache_size /= 2;
+
+
+
+  if(cache_org == sc) cache_size /= 2; //we have 2 caches organization so we divide by 2
   uint32_t num_blocks = cache_size / block_size;
 
   cache_entry_t cache;
   cache_entry_t cache_sc_data;
   cache_entry_t cache_sc_instruction;
 
-  if(cache_org == sc){
+  if(cache_org == sc){//we need to initialize 2 caches one for data and one for instruction
     initCache(&cache_sc_data, num_blocks);
     initCache(&cache_sc_instruction, num_blocks);
   }else{  
     initCache(&cache, num_blocks);
   }
-  uint32_t offsetMask, tagMask;
+  uint32_t offsetMask, tagMask; //we need to calculate the mask for the offset and tag
 
   maskSetup(&offsetMask, &tagMask);
   printf("%d %d\n", offsetMask, tagMask);
@@ -219,7 +221,7 @@ void main(int argc, char** argv) {
         }        
       }else{
           cache_statistics.hits+=cache_access_fa(&cache, access, offsetMask, tagMask);
-      }
+        }
     }
     cache_statistics.accesses++;
   }
